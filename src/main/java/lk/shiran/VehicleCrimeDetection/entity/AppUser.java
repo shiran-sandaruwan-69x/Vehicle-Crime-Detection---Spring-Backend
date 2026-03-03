@@ -20,6 +20,8 @@ public class AppUser {
     private Long id;
     private String name;
     private String username;
+    private String email;
+    private String nicNo;
     private String password;
 
     // FetchType.LAZY wala okoma data tika load kara gannawa collection eke thiyana eka application ek slow wenna puluwan
