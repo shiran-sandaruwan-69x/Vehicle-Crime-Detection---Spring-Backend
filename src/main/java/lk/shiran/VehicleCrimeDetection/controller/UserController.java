@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lk.shiran.VehicleCrimeDetection.dto.AppRoleDTO;
 import lk.shiran.VehicleCrimeDetection.dto.AppUserDTO;
 import lk.shiran.VehicleCrimeDetection.dto.RoleUserDTO;
+import lk.shiran.VehicleCrimeDetection.dto.UpdatePermissionDTO;
 import lk.shiran.VehicleCrimeDetection.entity.AppRole;
 import lk.shiran.VehicleCrimeDetection.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -61,12 +62,24 @@ public class UserController {
         return ResponseEntity.created(uri).body(appUserDTO);
     }
 
-    @PostMapping("/role/save")
-    public String saveRole(@RequestBody AppRoleDTO roleDTO){
+//    @PostMapping("/role/save")
+//    public String saveRole(@RequestBody AppRoleDTO roleDTO){
 //        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentRequestUri().path("/api/user/role/save").toUriString());
 //        AppRoleDTO appRoleDTO = userService.saveRole(roleDTO);
 //        return ResponseEntity.created(uri).body(appRoleDTO);
-        return "gg";
+//    }
+
+    @PostMapping("/role/save")
+    public ResponseEntity<AppRoleDTO> saveRole(@RequestBody AppRoleDTO roleDTO){
+        URI uri = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(roleDTO.getId())
+                .toUri();
+
+        AppRoleDTO savedRole = userService.saveRole(roleDTO);
+
+        return ResponseEntity.created(uri).body(savedRole);
     }
 
     @GetMapping("/user/{username}")
@@ -126,6 +139,36 @@ public class UserController {
         }else{
             throw new RuntimeException("Refresh token missing");
         }
+    }
+
+    @GetMapping("/roles")
+    public ResponseEntity<List<AppRoleDTO>> getAllRoles(){
+        return ResponseEntity.ok().body(userService.getRoles());
+    }
+
+    @PutMapping("/role/update/{id}")
+    public ResponseEntity<AppRoleDTO> updateRole(
+            @PathVariable Long id,
+            @RequestBody AppRoleDTO roleDTO){
+
+        AppRoleDTO updatedRole = userService.updateRole(id, roleDTO);
+
+        return ResponseEntity.ok().body(updatedRole);
+    }
+
+    @GetMapping("/role/{roleId}/permissions")
+    public ResponseEntity<?> getPermissionsByRole(@PathVariable Long roleId) {
+        return ResponseEntity.ok(userService.getPermissionsByRoleId(roleId));
+    }
+
+    @PutMapping("/role/{roleId}/permissions")
+    public ResponseEntity<?> updatePermissions(
+            @PathVariable Long roleId,
+            @RequestBody UpdatePermissionDTO dto) {
+
+        userService.updateRolePermissions(roleId, dto.getPermissions());
+
+        return ResponseEntity.ok("Permissions Updated Successfully");
     }
 
 }

@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class AppRoleDTO {
     private Long id;
     private String name;
+    private Boolean status;
 }

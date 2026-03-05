@@ -4,28 +4,26 @@ import lk.shiran.VehicleCrimeDetection.dto.AppRoleDTO;
 import lk.shiran.VehicleCrimeDetection.dto.AppUserDTO;
 import lk.shiran.VehicleCrimeDetection.entity.AppRole;
 import lk.shiran.VehicleCrimeDetection.entity.AppUser;
-import lk.shiran.VehicleCrimeDetection.repo.RoleRepo;
-import lk.shiran.VehicleCrimeDetection.repo.UserRepo;
+import lk.shiran.VehicleCrimeDetection.entity.Module;
+import lk.shiran.VehicleCrimeDetection.entity.Permission;
+import lk.shiran.VehicleCrimeDetection.entity.RolePermission;
+import lk.shiran.VehicleCrimeDetection.repo.*;
 import lk.shiran.VehicleCrimeDetection.service.UserService;
-import lombok.Lombok;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -36,6 +34,13 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final UserRepo userRepo;
 
     private final RoleRepo roleRepo;
+
+    private final ModuleRepo moduleRepo;
+
+    private final PermissionRepo permissionRepo;
+
+    private final RolePermissionRepo rolePermissionRepo;
+
 
     @Autowired
     private ModelMapper mapper;
@@ -73,12 +78,26 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         return null;
     }
 
+//    @Override
+//    public AppRoleDTO saveRole(AppRoleDTO appRoleDTO) {
+//        if (appRoleDTO != null){
+//            log.info("saving new role {} to database",appRoleDTO.getName());
+//            roleRepo.save(mapper.map(appRoleDTO, AppRole.class));
+//            return appRoleDTO;
+//        }
+//        return null;
+//    }
+
     @Override
     public AppRoleDTO saveRole(AppRoleDTO appRoleDTO) {
         if (appRoleDTO != null){
-            log.info("saving new role {} to database",appRoleDTO.getName());
-            roleRepo.save(mapper.map(appRoleDTO, AppRole.class));
-            return appRoleDTO;
+            log.info("saving new role {} to database", appRoleDTO.getName());
+
+            AppRole savedRole = roleRepo.save(
+                    mapper.map(appRoleDTO, AppRole.class)
+            );
+
+            return mapper.map(savedRole, AppRoleDTO.class);
         }
         return null;
     }
@@ -104,5 +123,111 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         return mapper.map(userRepo.findAll(), new TypeToken<ArrayList<AppUserDTO>>(){}.getType());
     }
 
+    @Override
+    public List<AppRoleDTO> getRoles() {
+        log.info("Fetching all roles");
+        return mapper.map(
+                roleRepo.findAll(),
+                new TypeToken<List<AppRoleDTO>>() {}.getType()
+        );
+    }
+
+    @Override
+    public AppRoleDTO updateRole(Long id, AppRoleDTO appRoleDTO) {
+        log.info("Updating role with id {}", id);
+
+        AppRole existingRole = roleRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Role not found with id " + id));
+
+        // Update only required fields
+        existingRole.setName(appRoleDTO.getName());
+        existingRole.setStatus(appRoleDTO.getStatus());
+
+        AppRole updatedRole = roleRepo.save(existingRole);
+
+        return mapper.map(updatedRole, AppRoleDTO.class);
+    }
+
+    @Override
+    public Map<String, Map<String, List<Map<String, Object>>>>
+    getPermissionsByRoleId(Long roleId) {
+
+        List<RolePermission> rolePermissions = rolePermissionRepo.findByRoleId(roleId);
+
+        Map<Long, Boolean> activePermissionMap = rolePermissions.stream()
+                .collect(Collectors.toMap(
+                        rp -> rp.getPermission().getId(),
+                        rp -> true
+                ));
+
+        List<Module> modules = moduleRepo.findAll();
+
+        Map<String, Map<String, List<Map<String, Object>>>> response = new LinkedHashMap<>();
+
+        List<Module> parents = modules.stream()
+                .filter(m -> m.getParentId() == null)
+                .collect(Collectors.toList());
+
+        for (Module parent : parents) {
+
+            Map<String, List<Map<String, Object>>> childMap = new LinkedHashMap<>();
+
+            List<Module> children = modules.stream()
+                    .filter(m -> parent.getId().equals(m.getParentId()))
+                    .collect(Collectors.toList());
+
+            for (Module child : children) {
+
+                List<Permission> permissions = permissionRepo.findByModuleId(child.getId());
+
+                List<Map<String, Object>> permissionList = permissions.stream()
+                        .map(p -> {
+                            Map<String, Object> map = new HashMap<>();
+                            map.put("id", p.getId());
+                            map.put("name", p.getName());
+                            map.put("action", activePermissionMap.containsKey(p.getId()));
+                            map.put("parentId", child.getId());
+                            return map;
+                        })
+                        .collect(Collectors.toList());
+
+                childMap.put(child.getName(), permissionList);
+            }
+
+            response.put(parent.getName(), childMap);
+        }
+
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public void updateRolePermissions(Long roleId, List<Long> permissionIds) {
+
+        // 1️⃣ Check role exists
+        AppRole role = roleRepo.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Role not found with id " + roleId));
+
+        // 2️⃣ Delete existing permissions of that role
+        rolePermissionRepo.deleteByRoleId(roleId);
+
+        // 3️⃣ If no permissions selected, stop here
+        if (permissionIds == null || permissionIds.isEmpty()) {
+            return;
+        }
+
+        // 4️⃣ Fetch all permissions at once (better performance)
+        List<Permission> permissions = permissionRepo.findAllById(permissionIds);
+
+        // 5️⃣ Assign new permissions
+        for (Permission permission : permissions) {
+
+            RolePermission rolePermission = new RolePermission();
+            rolePermission.setRole(role);
+            rolePermission.setPermission(permission);
+
+            rolePermissionRepo.save(rolePermission);
+        }
+    }
 
 }
