@@ -54,10 +54,10 @@ public class VehicleCrimeDetection {
 //			userService.saveRole(new AppRoleDTO(null,"ROLE_ADMIN", true));
 //			userService.saveRole(new AppRoleDTO(null,"ROLE_SUPER_ADMIN", true));
 //
-//			userService.saveUser(new AppUserDTO(null,"shiran sandaruwan","shiran","shiran@gmail.com","972752916v","1234",new ArrayList<>()));
-//			userService.saveUser(new AppUserDTO(null,"kamal perera","kamal","kamal@gmail.com","972752911v","1234",new ArrayList<>()));
-//			userService.saveUser(new AppUserDTO(null,"gayan perera","gayan","gayan@gmail.com","972752913v","1234",new ArrayList<>()));
-//			userService.saveUser(new AppUserDTO(null,"tashi perera","tashi","tashi@gmail.com","972752915v","1234",new ArrayList<>()));
+//			userService.saveUser(new AppUserDTO(null,"shiran sandaruwan","shiran","shiran@gmail.com","972752916v","1234",true,new ArrayList<>()));
+//			userService.saveUser(new AppUserDTO(null,"kamal perera","kamal","kamal@gmail.com","972752911v","1234",true,new ArrayList<>()));
+//			userService.saveUser(new AppUserDTO(null,"gayan perera","gayan","gayan@gmail.com","972752913v","1234",true,new ArrayList<>()));
+//			userService.saveUser(new AppUserDTO(null,"tashi perera","tashi","tashi@gmail.com","972752915v","1234",true,new ArrayList<>()));
 //
 //
 //			userService.addRoleToUser("shiran","ROLE_ADMIN");

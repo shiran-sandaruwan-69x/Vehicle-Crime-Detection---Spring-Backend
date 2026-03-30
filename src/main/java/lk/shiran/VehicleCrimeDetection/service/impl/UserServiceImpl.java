@@ -230,4 +230,28 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
     }
 
+    @Override
+    public AppUserDTO updateUser(Long id, AppUserDTO userDTO) {
+        AppUser existingUser = userRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id " + id));
+
+        existingUser.setName(userDTO.getName());
+        existingUser.setUsername(userDTO.getUsername());
+        existingUser.setEmail(userDTO.getEmail());
+        existingUser.setNicNo(userDTO.getNicNo());
+        existingUser.setStatus(userDTO.getStatus());
+
+        if(userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()){
+            existingUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        }
+
+        if(userDTO.getRoles() != null){
+            existingUser.setRoles(userDTO.getRoles());
+        }
+
+        AppUser updatedUser = userRepo.save(existingUser);
+
+        return mapper.map(updatedUser, AppUserDTO.class);
+    }
+
 }
