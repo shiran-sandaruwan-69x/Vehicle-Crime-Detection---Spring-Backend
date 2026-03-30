@@ -23,7 +23,7 @@ public class AppUser {
     private String email;
     private String nicNo;
     private String password;
-
+    private Boolean status;
     // FetchType.LAZY wala okoma data tika load kara gannawa collection eke thiyana eka application ek slow wenna puluwan
     // a nisa api FetchType.EAGER use karanawa collection walata
     @ManyToMany(fetch = EAGER)
