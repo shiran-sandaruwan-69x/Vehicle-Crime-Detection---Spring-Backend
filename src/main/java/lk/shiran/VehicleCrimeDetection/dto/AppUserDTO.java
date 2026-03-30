@@ -18,5 +18,6 @@ public class AppUserDTO {
     private String email;
     private String nicNo;
     private String password;
+    private Boolean status;
     private Collection<AppRole> roles = new ArrayList<>();
 }
