@@ -57,9 +57,19 @@ public class UserController {
 
     @PostMapping("/user/save")
     public ResponseEntity<AppUserDTO> saveUser(@RequestBody AppUserDTO userDTO){
-        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentRequestUri().path("/api/user/user/save").toUriString());
+        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentRequestUri().path("/api/user/save").toUriString());
         AppUserDTO appUserDTO = userService.saveUser(userDTO);
         return ResponseEntity.created(uri).body(appUserDTO);
+    }
+
+    @PutMapping("/user/update/{id}")
+    public ResponseEntity<AppUserDTO> updateUser(
+            @PathVariable Long id,
+            @RequestBody AppUserDTO userDTO){
+
+        AppUserDTO updatedUser = userService.updateUser(id, userDTO);
+
+        return ResponseEntity.ok().body(updatedUser);
     }
 
 //    @PostMapping("/role/save")

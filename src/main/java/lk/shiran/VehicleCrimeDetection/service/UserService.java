@@ -22,4 +22,6 @@ public interface UserService {
 
     void updateRolePermissions(Long roleId, List<Long> permissionIds);
 
+    AppUserDTO updateUser(Long id, AppUserDTO userDTO);
+
 }
