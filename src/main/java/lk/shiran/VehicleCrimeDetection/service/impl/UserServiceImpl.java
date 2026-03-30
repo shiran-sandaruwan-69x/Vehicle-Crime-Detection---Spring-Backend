@@ -41,6 +41,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     private final RolePermissionRepo rolePermissionRepo;
 
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     private ModelMapper mapper;
